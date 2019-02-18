@@ -1,3 +1,3 @@
 Manifest-Version: 1.0
-Main-Class: com.sxt.java.sql.dataframe.CreateDFFromHive
+Main-Class: com.seanxia.java.sql.dataframe.CreateDFFromHive
 
