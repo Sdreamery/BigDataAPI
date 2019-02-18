@@ -1,0 +1,26 @@
+package com.sxt.scala.core
+
+import org.apache.spark.SparkConf
+import org.apache.spark.SparkContext
+
+object BroadCast {
+    def main(args: Array[String]): Unit = {
+
+        val conf = new SparkConf()
+        conf.setMaster("local").setAppName("brocast")
+        val sc = new SparkContext(conf)
+        val list = List("hello xasxt")
+        var broadCast = sc.broadcast(list)
+        val lineRDD = sc.textFile("data/word.txt")
+
+        lineRDD.filter { x => {
+            val list = broadCast.value
+            list.contains(x)
+        }}.foreach {
+            println
+        }
+
+
+        sc.stop()
+    }
+}
