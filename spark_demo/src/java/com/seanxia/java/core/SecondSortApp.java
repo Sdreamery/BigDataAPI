@@ -1,4 +1,4 @@
-package com.seanxia.java.core;
+package com.seanxia.spark.java.core;
 
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaPairRDD;
@@ -8,29 +8,22 @@ import org.apache.spark.api.java.function.PairFunction;
 import org.apache.spark.api.java.function.VoidFunction;
 import scala.Tuple2;
 
-import java.util.Comparator;
-
 public class SecondSortApp {
+    public static void main(String[] args){
 
-    public static void main(String[] args) {
+        SparkConf conf = new SparkConf();
+        conf.setMaster("local").setAppName("SecondSortTest");
+        JavaSparkContext context = new JavaSparkContext(conf);
 
-        SparkConf sparkConf = new SparkConf();
+        JavaRDD<String> lineRDD = context.textFile("./data/secondSort.txt");
 
-        sparkConf.setMaster("local").setAppName("SecondarySortTest");
-
-        final JavaSparkContext sc = new JavaSparkContext(sparkConf);
-
-        JavaRDD<String> secondRDD = sc.textFile("data/secondSort.txt");
-
-        JavaPairRDD<SecondSortKey, String> pairSecondRDD = secondRDD.mapToPair(
+        JavaPairRDD<SecondSortKey, String> pairSecondRDD = lineRDD.mapToPair(
                 new PairFunction<String, SecondSortKey, String>() {
-            private static final long serialVersionUID = 1L;
-
             @Override
             public Tuple2<SecondSortKey, String> call(String line) throws Exception {
-                String[] splited = line.split(" ");
-                int first = Integer.valueOf(splited[0]);
-                int second = Integer.valueOf(splited[1]);
+                String[] split = line.split(" ");
+                Integer first = Integer.valueOf(split[0]);
+                Integer second = Integer.valueOf(split[1]);
                 SecondSortKey secondSortKey = new SecondSortKey(first, second);
                 return new Tuple2<SecondSortKey, String>(secondSortKey, line);
             }
@@ -38,14 +31,13 @@ public class SecondSortApp {
 
         pairSecondRDD.sortByKey(false).foreach(
                 new VoidFunction<Tuple2<SecondSortKey, String>>() {
-                    private static final long serialVersionUID = 1L;
-
-                    @Override
-                    public void call(Tuple2<SecondSortKey, String> tuple) throws Exception {
-                        System.out.println(tuple + "------" + tuple._2);
-                    }
-                });
+            @Override
+            public void call(Tuple2<SecondSortKey, String> tuple2) throws Exception {
+                System.out.println(tuple2 + "------" + tuple2._2);
+            }
+        });
 
     }
+
 
 }

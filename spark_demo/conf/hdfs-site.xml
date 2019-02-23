@@ -16,89 +16,63 @@
 
 <!-- Put site-specific property overrides in this file. -->
 
+
+
 <configuration>
- <property>
-   <name>dfs.nameservices</name>
-   <value>shsxt</value>
-  </property>
- <property>
-  <name>dfs.ha.namenodes.shsxt</name>
-  <value>nn1,nn2</value>
- </property>
- <property>
-   <name>dfs.replication</name>
-   <value>3</value>
- </property>
- <property>
-  <name>dfs.namenode.rpc-address.shsxt.nn1</name>
-  <value>node01:8020</value>
-</property>
-<property>
-  <name>dfs.namenode.rpc-address.shsxt.nn2</name>
-  <value>node02:8020</value>
-</property>
-<property>
-  <name>dfs.namenode.http-address.shsxt.nn1</name>
-  <value>node01:50070</value>
-</property>
-<property>
-  <name>dfs.namenode.http-address.shsxt.nn2</name>
-  <value>node02:50070</value>
-</property>
-<property>
-  <name>dfs.data.dir</name>
-  <value>/var/hadoop/dfs/data</value>
-</property>
-<property>
-    <name>dfs.datanode.fsdataset.volume.choosing.policy</name>
-    <value>org.apache.hadoop.hdfs.server.datanode.fsdataset.AvailableSpaceVolumeChoosingPolicy</value>
-  </property>
-<property>
-  <name>dfs.namenode.shared.edits.dir</name>
-  <value>qjournal://node1:8485;node2:8485;node3:8485/shsxt</value>
-</property>
-<property>
-  <name>dfs.journalnode.edits.dir</name>
-  <value>/var/jn</value>
-</property>
-<property>
-  <name>dfs.client.failover.proxy.provider.shsxt</name>
-  <value>org.apache.hadoop.hdfs.server.namenode.ha.ConfiguredFailoverProxyProvider </value>
-</property>
-<property>
-  <name>dfs.ha.fencing.methods</name>
-  <value>sshfence</value>
-</property>
-<property>
-  <name>dfs.ha.fencing.ssh.private-key-files</name>
-  <value>/root/.ssh/id_rsa</value>
-</property>
-<property>
-   <name>dfs.ha.automatic-failover.enabled</name>
-   <value>true</value>
-</property>
-<property>
-   <name>dfs.datanode.max.xcievers</name>
-   <value>4096</value>
-</property>
-<property>
-   <name>dfs.balance.bandwidthPerSec</name>
-   <value>10485760</value>
-</property>
-<property>
-<name>dfs.socket.timeout</name>
-<value>900000</value>
-</property>
-<property>
-<name>dfs.datanode.handler.count</name>
-<value>20</value>
-</property>
-<property>
-<name>dfs.namenode.handler.count</name>
-<value>30</value>
-</property>
-<property>
-<name>dfs.datanode.socket.write.timeout</name>
-<value>1800000</value>
-</property>
+	<property>
+	  <name>dfs.nameservices</name>
+	  <value>Xss</value>
+	</property>
+	<property>
+	  <name>dfs.ha.namenodes.Xss</name>
+	  <value>nn1,nn2</value>
+	</property>
+	<property>
+	  <name>dfs.namenode.rpc-address.Xss.nn1</name>
+	  <value>sean01:8020</value>
+	</property>
+	<property>
+	  <name>dfs.namenode.rpc-address.Xss.nn2</name>
+	  <value>sean02:8020</value>
+	</property>
+	<property>
+	  <name>dfs.namenode.http-address.Xss.nn1</name>
+	  <value>sean01:50070</value>
+	</property>
+	<property>
+	  <name>dfs.namenode.http-address.Xss.nn2</name>
+	  <value>sean02:50070</value>
+	</property>
+	<property>
+	  <!-- 指定namenode元数据存储在journalnode中的路径 -->
+	  <name>dfs.namenode.shared.edits.dir</name>
+	  <value>qjournal://sean01:8485;sean02:8485;sean03:8485/Xss</value>
+	</property>
+	<property>
+	  <!-- 指定HDFS客户端连接active namenode的java类 -->
+	  <name>dfs.client.failover.proxy.provider.Xss</name>
+	<value>org.apache.hadoop.hdfs.server.namenode.ha.ConfiguredFailoverProxyProvider</value>
+	</property>
+	<property>
+	  <!-- 配置隔离机制为ssh 防止脑裂 -->
+	  <name>dfs.ha.fencing.methods</name>
+	  <value>sshfence</value>
+	</property>
+	<property>
+	  <!-- 指定秘钥的位置 -->
+	  <name>dfs.ha.fencing.ssh.private-key-files</name>
+	  <value>/root/.ssh/id_rsa</value>
+	</property>
+	<property>
+	  <!-- 指定journalnode日志文件存储的路径 -->
+	  <name>dfs.journalnode.edits.dir</name>
+	  <value>/opt/hadoop2.6.5/data</value>
+	</property>
+	<property>
+	   <!-- 开启自动故障转移 -->
+	   <name>dfs.ha.automatic-failover.enabled</name>
+	   <value>true</value>
+	</property>
 </configuration>
+
+

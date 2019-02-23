@@ -1,15 +1,15 @@
-package com.seanxia.java.sql.dataframe;
+package com.seanxia.spark.java.sql.dataframe;
 
 import java.io.Serializable;
 
-public class Person implements Serializable{
+public class Person implements Serializable {
 	/**
-	 * 
+	 *  Person 类
 	 */
 	private static final long serialVersionUID = 1L;
 
 	private String id ;
-	private  String name;
+	private String name;
 	private Integer age;
 	
 	public String getId() {

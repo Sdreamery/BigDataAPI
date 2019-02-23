@@ -1,8 +1,4 @@
-package com.seanxia.java.sql.udf_udaf;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+package com.seanxia.spark.java.sql.udf_udaf;
 
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaRDD;
@@ -12,7 +8,6 @@ import org.apache.spark.sql.DataFrame;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.RowFactory;
 import org.apache.spark.sql.SQLContext;
-import org.apache.spark.sql.execution.aggregate.MutableAggregationBufferImpl;
 import org.apache.spark.sql.expressions.MutableAggregationBuffer;
 import org.apache.spark.sql.expressions.UserDefinedAggregateFunction;
 import org.apache.spark.sql.types.DataType;
@@ -20,31 +15,31 @@ import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 /**
  * UDAF 用户自定义聚合函数
- *
- * @author root
  */
 public class UDAF {
     public static void main(String[] args) {
 
         SparkConf conf = new SparkConf();
-        conf.setMaster("local").setAppName("udaf");
+        conf.setMaster("local").setAppName("UDAF");
         conf.set("spark.sql.shuffle.partitions", "1");
         JavaSparkContext sc = new JavaSparkContext(conf);
         SQLContext sqlContext = new SQLContext(sc);
-        JavaRDD<String> parallelize = sc.parallelize(
-                Arrays.asList("zhangsan", "lisi", "wangwu", "zhangsan", "zhangsan", "lisi","zhangsan", "lisi", "wangwu", "zhangsan", "zhangsan", "lisi"),2);
-        JavaRDD<Row> rowRDD = parallelize.map(new Function<String, Row>() {
 
-            /**
-             *
-             */
+        JavaRDD<String> parallelize = sc.parallelize(
+                Arrays.asList("zhangsan", "lisi", "wangwu", "zhangsan", "zhangsan", "lisi",
+                        "zhangsan", "lisi", "wangwu", "zhangsan", "zhangsan", "lisi"),2);
+
+        JavaRDD<Row> rowRDD = parallelize.map(new Function<String, Row>() {
             private static final long serialVersionUID = 1L;
 
             @Override
             public Row call(String s) throws Exception {
-
                 return RowFactory.create(s);
             }
         });
@@ -58,25 +53,8 @@ public class UDAF {
         /**
          * 注册一个UDAF函数,实现统计相同值得个数
          * 注意：这里可以自定义一个类继承UserDefinedAggregateFunction类也是可以的
-         * 数据：
-         *     zhangsan
-         *     zhangsan
-         *     lisi
-         *     lisi
-         *     wangwu
-         *     wangwu
-         *     zhangsan
-         *
-         *     select count(*)  from user group by name
          */
-
-
-
         sqlContext.udf().register("StringCount", new UserDefinedAggregateFunction() {
-
-            /**
-             *
-             */
             private static final long serialVersionUID = 1L;
 
             /**
@@ -84,13 +62,8 @@ public class UDAF {
              */
             @Override
             public void initialize(MutableAggregationBuffer buffer) {
-
-
                 buffer.update(0, 0);
-
-
                 System.out.println("init ....." + buffer.get(0));
-
             }
 
             /**
@@ -102,9 +75,7 @@ public class UDAF {
              */
             @Override
             public void update(MutableAggregationBuffer buffer, Row arg1) {
-
                 System.out.println(buffer.getClass() + "-----------------------");
-
 
                 buffer.update(0, buffer.getInt(0) + 1);
 
@@ -118,13 +89,7 @@ public class UDAF {
              * buffer2.getInt(0) : 这次计算传入进来的update的结果
              * 这里即是：最后在分布式节点完成后需要进行全局级别的Merge操作
              */
-
             public void merge(MutableAggregationBuffer buffer1, Row arg1) {
-                // 2 3  4  5  6  7
-                // 0 + 2 = 2
-                // 2 + 3 = 5
-                // 5 + 4  = 9
-
                 buffer1.update(0, buffer1.getInt(0) + arg1.getInt(0));
                 System.out.println("merge.....buffer ： " + buffer1.toString() + "| row" + arg1.toString() );
             }
@@ -134,7 +99,8 @@ public class UDAF {
              */
             @Override
             public StructType bufferSchema() {
-                return DataTypes.createStructType(Arrays.asList(DataTypes.createStructField("bffer", DataTypes.IntegerType, true)));
+                return DataTypes.createStructType(Arrays.asList(
+                        DataTypes.createStructField("bffer", DataTypes.IntegerType, true)));
             }
 
             /**
@@ -158,7 +124,8 @@ public class UDAF {
              */
             @Override
             public StructType inputSchema() {
-                return DataTypes.createStructType(Arrays.asList(DataTypes.createStructField("name", DataTypes.StringType, true)));
+                return DataTypes.createStructType(Arrays.asList(
+                        DataTypes.createStructField("name", DataTypes.StringType, true)));
             }
 
             /**
@@ -170,16 +137,8 @@ public class UDAF {
             }
 
         });
-        /**
-         * zhangsan
-         * zhangsan
-         *
-         * lisi
-         * lisi
-         * lisi
-         */
+
         sqlContext.sql("select name ,StringCount(name) as number from user group by name").show();
-        //select name ,count(*)/count(name) form user group by name
 
         sc.stop();
     }

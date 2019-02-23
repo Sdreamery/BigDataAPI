@@ -1,4 +1,4 @@
-package com.seanxia.java.sql.windowfun;
+package com.seanxia.spark.java.sql.windowfun;
 
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaSparkContext;
@@ -12,17 +12,18 @@ import org.apache.spark.sql.hive.HiveContext;
  * row_number() over (partition by xxx order by xxx desc) xxx
  * 注意：
  * 如果SQL语句里面使用到了开窗函数，那么这个SQL语句必须使用HiveContext来执行
- * @author root
  *
  */
 public class RowNumberWindowFun {
     //-Xms800m -Xmx800m  -XX:PermSize=64M -XX:MaxNewSize=256m -XX:MaxPermSize=128m
 	public static void main(String[] args) {
+
 		SparkConf conf = new SparkConf();
 		conf.setAppName("windowfun").setMaster("local");
 		JavaSparkContext sc = new JavaSparkContext(conf);
         conf.set("spark.sql.shuffle.partitions", "1");
 		HiveContext hiveContext = new HiveContext(sc);
+
 		hiveContext.sql("use spark");
 		hiveContext.sql("drop table if exists sales");
 		hiveContext.sql("create table if not exists sales (riqi string,leibie string,jine Int) "
@@ -49,29 +50,12 @@ public class RowNumberWindowFun {
 		 * 6 B 600  --rank 1
 		 * 4 B 400	--rank 2
          * 2 B 200  --rank 3
-		 *
-         * 2018 A 400     1
-         * 2017 A 500     2
-         * 2016 A 550     3
-         *
-         *
-         * 2016 A 550     1
-         * 2017 A 500     2
-         * 2018 A 400     3
-         *
 		 */
+		DataFrame result = hiveContext.sql("select riqi,leibie,jine,rank " +
+				"from (select riqi,leibie,jine, " +
+				"row_number() over (partition by leibie order by jine desc) rank " +
+				"where t.rank<=3");
 
-//		hiveContext.sql("select riqi,leibie,jine,"
-//                        + "row_number() over (partition by leibie order by jine desc) rank "
-//                        + "from sales").show();
-
-
-		DataFrame result = hiveContext.sql("select riqi,leibie,jine,rank "
-							+ "from ("
-								+ "select riqi,leibie,jine,"
-								+ "row_number() over (partition by leibie order by jine desc) rank "
-								+ "from sales) t "
-						+ "where t.rank<=3");
 		result.show(100);
 		/**
 		 * 将结果保存到hive表sales_result

@@ -1,8 +1,4 @@
-package com.seanxia.java.sql.udf_udaf;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+package com.seanxia.spark.java.sql.udf_udaf;
 
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaRDD;
@@ -12,11 +8,15 @@ import org.apache.spark.sql.DataFrame;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.RowFactory;
 import org.apache.spark.sql.SQLContext;
-import org.apache.spark.sql.api.java.UDF1;
 import org.apache.spark.sql.api.java.UDF2;
 import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 /**
  * UDF 用户自定义函数
  * @author root
@@ -25,18 +25,13 @@ import org.apache.spark.sql.types.StructType;
 public class UDF {
 	public static void main(String[] args) {
 		SparkConf conf = new SparkConf();
-		conf.setMaster("local");
-		conf.setAppName("udf");
+		conf.setMaster("local").setAppName("UDF");
 		JavaSparkContext sc = new JavaSparkContext(conf);
 
 		SQLContext sqlContext = new SQLContext(sc);
 		JavaRDD<String> parallelize = sc.parallelize(Arrays.asList("zhangsan","lisi","wangwu"));
 
 		JavaRDD<Row> rowRDD = parallelize.map(new Function<String, Row>() {
-
-			/**
-			 * 
-			 */
 			private static final long serialVersionUID = 1L;
 
 			@Override
@@ -59,34 +54,17 @@ public class UDF {
 		/**
 		 * 根据UDF函数参数的个数来决定是实现哪一个UDF  UDF1，UDF2。。。。UDF1xxx
 		 */
-
-
-//		sqlContext.udf().register("StrLen", new UDF1<String, Integer>() {
-//            @Override
-//            public Integer call(String s) throws Exception {
-//                return s.length();
-//            }
-//        },DataTypes.IntegerType);
-
-//		sqlContext.sql("select name ,StrLen(name) as length from user").show();
-		
 		sqlContext.udf().register("StrLen",new UDF2<String, Integer, Integer>() {
-
-			/**
-			 *
-			 */
 			private static final long serialVersionUID = 1L;
 
 			@Override
 			public Integer call(String t1, Integer t2) throws Exception {
 				return t1.length() + t2;
 			}
-		} ,DataTypes.IntegerType );
+		} , DataTypes.IntegerType );
 
 		sqlContext.sql("select name ,StrLen(name,100) as length from user").show();
-//
-		
+
 		sc.stop();
-		
 	}
 }

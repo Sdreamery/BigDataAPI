@@ -1,4 +1,4 @@
-package com.seanxia.scala.sql.windowfun
+package com.seanxia.spark.scala.sql.windowfun
 
 import org.apache.spark.SparkConf
 import org.apache.spark.SparkContext
@@ -20,11 +20,10 @@ object RowNumberWindowFun {
 		 * 【 rou_number() over (partitin by XXX order by XXX) 】
 		 */
 		val result = hiveContext.sql("select riqi,leibie,jine "
-							+ "from ("
-								+ "select riqi,leibie,jine,"
+								+ "from (select riqi,leibie,jine,"
 								+ "row_number() over (partition by leibie order by jine desc) rank "
 								+ "from sales) t "
-						+ "where t.rank<=3");
+								+ "where t.rank<=3");
 		result.show();
     sc.stop()
   }

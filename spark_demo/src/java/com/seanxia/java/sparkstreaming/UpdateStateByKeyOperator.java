@@ -1,24 +1,19 @@
-package com.seanxia.java.sparkstreaming;
+package com.seanxia.spark.java.sparkstreaming;
 
-import java.util.Arrays;
-import java.util.List;
-
+import com.google.common.base.Optional;
 import org.apache.spark.SparkConf;
-import org.apache.spark.api.java.JavaPairRDD;
-import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.FlatMapFunction;
 import org.apache.spark.api.java.function.Function2;
 import org.apache.spark.api.java.function.PairFunction;
-import org.apache.spark.api.java.function.VoidFunction;
 import org.apache.spark.streaming.Durations;
 import org.apache.spark.streaming.api.java.JavaDStream;
 import org.apache.spark.streaming.api.java.JavaPairDStream;
 import org.apache.spark.streaming.api.java.JavaReceiverInputDStream;
 import org.apache.spark.streaming.api.java.JavaStreamingContext;
-
-import com.google.common.base.Optional;
-
 import scala.Tuple2;
+
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * UpdateStateByKey的主要功能:
@@ -39,27 +34,21 @@ import scala.Tuple2;
 
 public class UpdateStateByKeyOperator {
     public static void main(String[] args) {
+
         SparkConf conf = new SparkConf().setMaster("local[2]").setAppName("UpdateStateByKeyDemo");
         JavaStreamingContext jsc = new JavaStreamingContext(conf, Durations.seconds(5));
+        JavaReceiverInputDStream<String> lines = jsc.socketTextStream("sean01", 8888);
         /**
          * 设置checkpoint目录
-         *
-         * 多久会将内存中的数据（每一个key所对应的状态）写入到磁盘上一份呢？
+         *  多久会将内存中的数据（每一个key所对应的状态）写入到磁盘上一份呢？
          * 	如果你的batch interval小于10s  那么每格10s会将内存中的数据写入到磁盘上
          * 	如果bacth interval 大于10s，那么就以bacth interval为准
-         *
-         * 这样做是为了防止频繁的写HDFS
+         *  这样做是为了防止频繁的写HDFS
          */
-
-// 		jsc.checkpoint("hdfs://shsxt/spark/checkpoint");
+// 		jsc.checkpoint("hdfs://Xss/spark/checkpoint");
         jsc.checkpoint("./checkpoint");
 
-        JavaReceiverInputDStream<String> lines = jsc.socketTextStream("node01", 7777);
-
         JavaDStream<String> words = lines.flatMap(new FlatMapFunction<String, String>() {
-            /**
-             *
-             */
             private static final long serialVersionUID = 1L;
 
             @Override
@@ -68,10 +57,8 @@ public class UpdateStateByKeyOperator {
             }
         });
 
-        JavaPairDStream<String, Integer> ones = words.mapToPair(new PairFunction<String, String, Integer>() {
-            /**
-             *
-             */
+        JavaPairDStream<String, Integer> ones = words.mapToPair(
+                new PairFunction<String, String, Integer>() {
             private static final long serialVersionUID = 1L;
 
             @Override
@@ -80,35 +67,37 @@ public class UpdateStateByKeyOperator {
             }
         });
 
+        /**
+         *  zhangsan,1
+         *  zhangsan,1
+         *  wangwu,1
+         * 转换后：
+         *  zhangsan,[1,1]
+         *  wangwu,[1]
+         */
+        JavaPairDStream<String, Integer> counts = ones.updateStateByKey(
+                new Function2<List<Integer>, Optional<Integer>, Optional<Integer>>() {
+            private static final long serialVersionUID = 1L;
 
+            @Override
+            public Optional<Integer> call(List<Integer> values, Optional<Integer> state) throws Exception {
+                /**
+                 * values：经过分组最后 这个key所对应的value  [1,1,1,1,1]
+                 * state：这个key在本次之前之前的状态,前面批次的累加值
+                 */
+                Integer updateValue = 0;
+                 if (state.isPresent()) {
+                    updateValue = state.get();
+                }
 
-        JavaPairDStream<String, Integer> counts =
-                ones.updateStateByKey(new Function2<List<Integer>, Optional<Integer>, Optional<Integer>>() {
-                    /**
-                     *
-                     */
-                    private static final long serialVersionUID = 1L;
+                System.out.println(updateValue + " =================  ");
 
-                    @Override
-                    public Optional<Integer> call(List<Integer> values, Optional<Integer> state) throws Exception {
-                        /**
-                         * values:经过分组最后 这个key所对应的value  [1,1,1,1,1]
-                         * state:这个key在本次之前之前的状态
-                         */
-
-                        Integer updateValue = 0;
-                        if (state.isPresent()) {
-                            updateValue = state.get();
-                        }
-
-                        System.out.println(updateValue + " ========  ");
-
-                        for (Integer value : values) {
-                            updateValue += value;
-                        }
-                        return Optional.of(updateValue);
-                    }
-                });
+                for (Integer value : values) {
+                    updateValue += value;
+                }
+                return Optional.of(updateValue);
+            }
+        });
 
         //output operator
         counts.print();

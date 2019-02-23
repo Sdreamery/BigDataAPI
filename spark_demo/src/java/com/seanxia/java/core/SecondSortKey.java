@@ -1,4 +1,4 @@
-package com.seanxia.java.core;
+package com.seanxia.spark.java.core;
 
 import java.io.Serializable;
 
@@ -7,6 +7,7 @@ public class SecondSortKey  implements Serializable , Comparable<SecondSortKey>{
     private static final long serialVersionUID = 1L;
     private int first;
     private int second;
+
     public int getFirst() {
         return first;
     }
@@ -31,12 +32,21 @@ public class SecondSortKey  implements Serializable , Comparable<SecondSortKey>{
     public int compareTo(SecondSortKey o1) {
 
         if (getFirst() - o1.getFirst() == 0) {
+            // 5     6
+            // this  < o1
+            // 6   5
+            // this > o1
+            return getSecond() - o1.getSecond();
 
-            return o1.getSecond() - getSecond();
+            /*if(getSecond() - o1.getSecond() == 0) {
+                return getThree() - o1.getThree();
+            }else {
+                return getSecond() - o1.getSecond();
+            }*/
 
         } else {
-            return  o1.getFirst() - getFirst();
-    }
+            return  getFirst() - o1.getFirst();
+        }
 
     }
 }

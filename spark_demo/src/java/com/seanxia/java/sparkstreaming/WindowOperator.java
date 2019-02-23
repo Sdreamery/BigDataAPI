@@ -1,8 +1,4 @@
-package com.seanxia.java.sparkstreaming;
-
-import java.util.Arrays;
-import java.util.Iterator;
-
+package com.seanxia.spark.java.sparkstreaming;
 
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.function.FlatMapFunction;
@@ -13,8 +9,9 @@ import org.apache.spark.streaming.api.java.JavaDStream;
 import org.apache.spark.streaming.api.java.JavaPairDStream;
 import org.apache.spark.streaming.api.java.JavaReceiverInputDStream;
 import org.apache.spark.streaming.api.java.JavaStreamingContext;
-
 import scala.Tuple2;
+
+import java.util.Arrays;
 
 
 /**
@@ -24,12 +21,9 @@ import scala.Tuple2;
  */
 
 public class WindowOperator {
-	
 	public static void main(String[] args) {
-		SparkConf conf = new SparkConf()
-				.setMaster("local[2]")
-				.setAppName("WindowHotWord"); 
-		
+
+		SparkConf conf = new SparkConf().setMaster("local[2]").setAppName("WindowHotWord");
 		JavaStreamingContext jssc = new JavaStreamingContext(conf, Durations.seconds(5));
 		/**
 		 * 设置日志级别为WARN
@@ -41,16 +35,12 @@ public class WindowOperator {
 		 *  没有优化的窗口函数可以不设置checkpoint目录
 		 *  优化的窗口函数必须设置checkpoint目录		 
 		 */
-
 //   		jssc.checkpoint("hdfs://node1:9000/spark/checkpoint");
    		jssc.checkpoint("./checkpoint");
-		JavaReceiverInputDStream<String> searchLogsDStream = jssc.socketTextStream("node01", 7777);
+		JavaReceiverInputDStream<String> searchLogsDStream = jssc.socketTextStream("sean01", 8888);
 		//word	1
-		JavaDStream<String> searchWordsDStream = searchLogsDStream.flatMap(new FlatMapFunction<String, String>() {
-
-			/**
-			 * 
-			 */
+		JavaDStream<String> searchWordsDStream = searchLogsDStream.flatMap(
+				new FlatMapFunction<String, String>() {
 			private static final long serialVersionUID = 1L;
 
 			@Override
@@ -60,21 +50,18 @@ public class WindowOperator {
 			}
 		});
 
-		
 		// 将搜索词映射为(searchWord, 1)的tuple格式
 		JavaPairDStream<String, Integer> searchWordPairDStream = searchWordsDStream.mapToPair(
-				
 				new PairFunction<String, String, Integer>() {
+			private static final long serialVersionUID = 1L;
 
-					private static final long serialVersionUID = 1L;
+			@Override
+			public Tuple2<String, Integer> call(String searchWord) throws Exception {
+				return new Tuple2<String, Integer>(searchWord, 1);
+			}
 
-					@Override
-					public Tuple2<String, Integer> call(String searchWord)
-							throws Exception {
-						return new Tuple2<String, Integer>(searchWord, 1);
-					}
-					
-				});
+		});
+
 		/**
 		 * 每隔10秒，计算最近60秒内的数据，那么这个窗口大小就是60秒，里面有12个rdd，在没有计算之前，这些rdd是不会进行计算的。
 		 * 那么在计算的时候会将这12个rdd聚合起来，然后一起执行reduceByKeyAndWindow操作 ，
@@ -107,7 +94,9 @@ public class WindowOperator {
 		 */
         JavaPairDStream<String, Integer> searchWordCountsDStream =
             searchWordPairDStream.reduceByKeyAndWindow(new Function2<Integer, Integer, Integer>() {
-                @Override
+				private static final long serialVersionUID = -1455586215705863965L;
+
+				@Override
                 public Integer call(Integer v1, Integer v2) throws Exception {
                     System.out.println("v1:" + v1 + " v2:" + v2 + "  ++++++++++");
                     return v1 + v2;
@@ -119,7 +108,6 @@ public class WindowOperator {
                     return v1 - v2;
                 }
             }, Durations.seconds(15), Durations.seconds(5));
-
 
 //
 //  	   JavaPairDStream<String, Integer> searchWordCountsDStream =
@@ -145,7 +133,6 @@ public class WindowOperator {
 //			}
 //
 //		}, Durations.seconds(15), Durations.seconds(5));
-
 
 	  	searchWordCountsDStream.print();
 		

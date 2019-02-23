@@ -1,88 +1,110 @@
-package com.seanxia.java.core;
-
-import java.util.Arrays;
+package com.seanxia.spark.java.core;
 
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.FlatMapFunction;
+import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.Function2;
 import org.apache.spark.api.java.function.PairFunction;
 import org.apache.spark.api.java.function.VoidFunction;
-
-import org.apache.spark.storage.StorageLevel;
 import scala.Tuple2;
 
-public class WordCountTest {
+import java.util.Arrays;
+import java.util.List;
 
-	public static void main(String[] args) {
-		SparkConf conf = new SparkConf().setAppName("WordCountTest").setMaster("local");
-		JavaSparkContext sc = new JavaSparkContext(conf);
-		
-		JavaRDD<String> lines = sc.textFile("README.md",2);
-		JavaRDD<String> words = lines.flatMap(new FlatMapFunction<String, String>(){
+public class WordCount {
+    public static void main(String[] args){
 
-			private static final long serialVersionUID = 1L;
+        SparkConf conf = new SparkConf();
+        conf.setMaster("local").setAppName("wc");
+        JavaSparkContext context = new JavaSparkContext(conf);
+        JavaRDD<String> lineRDD = context.textFile("./data/wc.txt");
 
-			public Iterable<String> call(String line) throws Exception {
-				String[] words = line.split(" ");
-				return Arrays.asList(words);
-			}
-			
-		});
+//        long count = javaRDD.count();
+//        List<String> collect = javaRDD.collect();
+//        List<String> take = javaRDD.take(5);
+//        String first = javaRDD.first();
 
+        JavaRDD<String> wordRDD = lineRDD.flatMap(new FlatMapFunction<String, String>() {
+            private static final long serialVersionUID = 1361366081449028006L;
 
-		JavaPairRDD<String, Integer> pairs = words.mapToPair(new PairFunction<String, String, Integer>() {
+            @Override
+            public Iterable<String> call(String line) throws Exception {
+                String[] split = line.split(" ");
+                List<String> list = Arrays.asList(split);
+                return list;
+            }
+        });
 
-			private static final long serialVersionUID = 1L;
+//        wordRDD.foreach(new VoidFunction<String>() {
+//            @Override
+//            public void call(String s) throws Exception {
+//                System.out.println(s);
+//            }
+//        });
 
-			public Tuple2<String, Integer> call(String word) throws Exception {
-				return new Tuple2<String, Integer>(word, 1);
-			}
-			
-		});
-		JavaPairRDD<String, Integer> wcs = pairs.reduceByKey(new Function2<Integer, Integer, Integer>(){
-            private static final long serialVersionUID = 1L;
+        JavaPairRDD<String, Integer> pairRDD = wordRDD.mapToPair(
+                new PairFunction<String, String, Integer>() {
+            private static final long serialVersionUID = -6202938131576200568L;
 
+            @Override
+            public Tuple2<String, Integer> call(String word) throws Exception {
+                return new Tuple2(word, 1);
+            }
+        });
+
+//        pairRDD.foreach(new VoidFunction<Tuple2<String, Integer>>() {
+//            @Override
+//            public void call(Tuple2<String, Integer> tuple2) throws Exception {
+//                System.out.println(tuple2);
+//            }
+//        });
+
+        JavaPairRDD<String, Integer> resultRDD = pairRDD.reduceByKey(
+                new Function2<Integer, Integer, Integer>() {
+            private static final long serialVersionUID = -2281075788486668774L;
+
+            @Override
             public Integer call(Integer v1, Integer v2) throws Exception {
                 return v1 + v2;
             }
         });
 
-        wcs.foreach(new VoidFunction<Tuple2<String, Integer>>() {
+        JavaPairRDD<Integer, String> reverseRDD = resultRDD.mapToPair(
+                new PairFunction<Tuple2<String, Integer>, Integer, String>() {
+            private static final long serialVersionUID = -2383474885055140770L;
+
+            @Override
+            public Tuple2<Integer, String> call(Tuple2<String, Integer> tuple2) throws Exception {
+                return new Tuple2<>(tuple2._2, tuple2._1);
+            }
+        });
+
+        JavaPairRDD<Integer, String> sortByKey = reverseRDD.sortByKey(false);
+
+        JavaPairRDD<String, Integer> result = sortByKey.mapToPair(
+                new PairFunction<Tuple2<Integer, String>, String, Integer>() {
+            private static final long serialVersionUID = -2517407873769342743L;
+
+            @Override
+            public Tuple2<String, Integer> call(Tuple2<Integer, String> tuple2) throws Exception {
+                return new Tuple2<>(tuple2._2, tuple2._1);
+            }
+        });
+
+        result.foreach(new VoidFunction<Tuple2<String, Integer>>() {
+            private static final long serialVersionUID = -7028608762710200957L;
+
             @Override
             public void call(Tuple2<String, Integer> tuple2) throws Exception {
                 System.out.println(tuple2);
             }
         });
-//		JavaPairRDD<Integer, String> tempwcs = wcs.mapToPair(new PairFunction<Tuple2<String, Integer>, Integer, String>(){
-//			private static final long serialVersionUID = 1L;
-//
-//			public Tuple2<Integer, String> call(Tuple2<String, Integer> tuple)
-//					throws Exception {
-//				return new Tuple2<Integer, String>(tuple._2,tuple._1);
-//			}
-//
-//		});
-//		JavaPairRDD<Integer, String> sortedwcs = tempwcs.sortByKey(false);
-//		JavaPairRDD<String, Integer> resultwcs = sortedwcs.mapToPair(new PairFunction<Tuple2<Integer, String>, String, Integer>(){
-//			private static final long serialVersionUID = 1L;
-//
-//			public Tuple2<String, Integer> call(Tuple2<Integer, String> tuple)
-//					throws Exception {
-//				return new Tuple2<String, Integer>(tuple._2,tuple._1);
-//			}
-//
-//		});
-//		resultwcs.foreach(new VoidFunction<Tuple2<String, Integer>>(){
-//			private static final long serialVersionUID = 1L;
-//
-//			public void call(Tuple2<String, Integer> wc) throws Exception {
-//				System.out.println(wc._1 + "   " + wc._2);
-//			}
-//		});
-		
-		sc.close();
-	}
+
+
+    }
+
 }
+
