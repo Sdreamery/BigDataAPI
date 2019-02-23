@@ -1,4 +1,4 @@
-package com.seanxia.java.sparkstreaming;
+package com.seanxia.spark.java.sparkstreaming;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -26,14 +26,16 @@ import scala.Tuple2;
  * @author root
  */
 public class SparkStreamingOnKafkaReceiver {
-
     public static void main(String[] args) {
-        SparkConf conf = new SparkConf().setAppName("SparkStreamingOnKafkaReceiver").setMaster("local[2]");
+
+        SparkConf conf = new SparkConf().setMaster("local[2]").
+                setAppName("SparkStreamingOnKafkaReceiver");
+
         //开启预写日志 WAL机制
         conf.set("spark.streaming.receiver.writeAheadLog.enable", "true");
 
         JavaStreamingContext jsc = new JavaStreamingContext(conf, Durations.seconds(10));
-        jsc.checkpoint("./receivedata");
+        jsc.checkpoint("./checkpoint");
 
         Map<String, Integer> topicConsumerConcurrency = new HashMap<String, Integer>();
         /**
@@ -47,7 +49,6 @@ public class SparkStreamingOnKafkaReceiver {
          * 第二个参数是ZooKeeper集群信息（接受Kafka数据的时候会从Zookeeper中获得Offset等元数据信息）
          * 第三个参数是Consumer Group 消费者组
          * 第四个参数是消费的Topic以及并发读取Topic中Partition的线程数
-         *
          * 注意：
          * KafkaUtils.createStream 使用五个参数的方法，设置receiver的存储级别
          */
@@ -60,18 +61,12 @@ public class SparkStreamingOnKafkaReceiver {
 
         JavaPairReceiverInputDStream<String, String> lines = KafkaUtils.createStream(
                 jsc,
-                "node01:2181,node02:2181,node03:2181",
+                "sean01:2181,sean02:2181,sean03:2181",
                 "MyFirstConsumerGroup",
                 topicConsumerConcurrency);
 
-
-
-
-        JavaDStream<String> words = lines.flatMap(new FlatMapFunction<Tuple2<String, String>, String>() {
-
-            /**
-             *
-             */
+        JavaDStream<String> words = lines.flatMap(
+                new FlatMapFunction<Tuple2<String, String>, String>() {
             private static final long serialVersionUID = 1L;
 
             public Iterable<String> call(Tuple2<String, String> tuple) throws Exception {
@@ -79,12 +74,8 @@ public class SparkStreamingOnKafkaReceiver {
             }
         });
 
-
-        JavaPairDStream<String, Integer> pairs = words.mapToPair(new PairFunction<String, String, Integer>() {
-
-            /**
-             *
-             */
+        JavaPairDStream<String, Integer> pairs = words.mapToPair(
+                new PairFunction<String, String, Integer>() {
             private static final long serialVersionUID = 1L;
 
             public Tuple2<String, Integer> call(String word) throws Exception {
@@ -93,25 +84,19 @@ public class SparkStreamingOnKafkaReceiver {
         });
 
 
-        JavaPairDStream<String, Integer> wordsCount = pairs.reduceByKey(new Function2<Integer, Integer, Integer>() {
-            //对相同的Key，进行Value的累计（包括Local和Reducer级别同时Reduce）
-
-            /**
-             *
-             */
+        JavaPairDStream<String, Integer> wordsCount = pairs.reduceByKey(
+                new Function2<Integer, Integer, Integer>() {
             private static final long serialVersionUID = 1L;
 
+            //对相同的Key，进行Value的累计（包括Local和Reducer级别同时Reduce）
             public Integer call(Integer v1, Integer v2) throws Exception {
                 return v1 + v2;
             }
         });
 
-
         wordsCount.print();
-
         jsc.start();
         jsc.awaitTermination();
         jsc.close();
     }
-
 }

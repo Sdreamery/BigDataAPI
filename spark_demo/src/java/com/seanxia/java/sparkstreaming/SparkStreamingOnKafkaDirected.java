@@ -1,13 +1,6 @@
-package com.seanxia.java.sparkstreaming;
+package com.seanxia.spark.java.sparkstreaming;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-
-import kafka.serializer.DefaultEncoder;
 import kafka.serializer.StringDecoder;
-
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.function.FlatMapFunction;
 import org.apache.spark.api.java.function.Function2;
@@ -18,9 +11,12 @@ import org.apache.spark.streaming.api.java.JavaPairDStream;
 import org.apache.spark.streaming.api.java.JavaPairInputDStream;
 import org.apache.spark.streaming.api.java.JavaStreamingContext;
 import org.apache.spark.streaming.kafka.KafkaUtils;
-
 import scala.Tuple2;
 
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
 
 
 /**
@@ -32,41 +28,38 @@ import scala.Tuple2;
  *
  */
 public class SparkStreamingOnKafkaDirected {
-
 	public static void main(String[] args) {
 		
-		SparkConf conf = new SparkConf().setMaster("local[2]").setAppName("SparkStreamingOnKafkaDirected");
+		SparkConf conf = new SparkConf().setMaster("local[2]")
+				.setAppName("SparkStreamingOnKafkaDirected");
 //		conf.set("spark.streaming.backpressure.enabled", "false");
 //		conf.set("spark.streaming.kafka.maxRatePerPartition", "100");
         conf.set("spark.streaming.stopGracefullyOnShutdown","true");
 		JavaStreamingContext jsc = new JavaStreamingContext(conf, Durations.seconds(5));
 		/**
-		 * 可以不设置checkpoint 不设置不保存offset,offset默认在内存中有一份，如果设置checkpoint在checkpoint也有一份offset， 一般要设置。
+		 * 可以不设置checkpoint 不设置不保存offset,offset默认在内存中有一份，
+		 * 如果设置checkpoint在checkpoint也有一份offset， 一般要设置。
 		 */
 		jsc.checkpoint("./checkpoint");
 		Map<String, String> kafkaParameters = new HashMap<String, String>();
-		kafkaParameters.put("metadata.broker.list", "node01:9092,node02:9092,node03:9092");
+		kafkaParameters.put("metadata.broker.list", "sean01:9092,sean02:9092,sean03:9092");
 //		kafkaParameters.put("auto.offset.reset", "smallest");
-
 		
 		HashSet<String> topics = new HashSet<String>();
 		topics.add("sk1");
         topics.add("sk2");
 
-
-
-		JavaPairInputDStream<String,String> lines = KafkaUtils.createDirectStream(jsc,
-				String.class,  
+		JavaPairInputDStream<String,String> lines = KafkaUtils.createDirectStream(
+				jsc,
+				String.class,
 				String.class,
 				StringDecoder.class,
 				StringDecoder.class,
                 kafkaParameters,
                 topics);
 
-		JavaDStream<String> words = lines.flatMap(new FlatMapFunction<Tuple2<String,String>, String>() { //如果是Scala，由于SAM转换，所以可以写成val words = lines.flatMap { line => line.split(" ")}
-			/**
-			 * 
-			 */
+		JavaDStream<String> words = lines.flatMap(
+				new FlatMapFunction<Tuple2<String,String>, String>() {
 			private static final long serialVersionUID = 1L;
 
 			public Iterable<String> call(Tuple2<String,String> tuple) throws Exception {
@@ -74,26 +67,18 @@ public class SparkStreamingOnKafkaDirected {
 			}
 		});
 
-
-
-		JavaPairDStream<String, Integer> pairs = words.mapToPair(new PairFunction<String, String, Integer>() {
-
-			/**
-			 * 
-			 */
+		JavaPairDStream<String, Integer> pairs = words.mapToPair(
+				new PairFunction<String, String, Integer>() {
 			private static final long serialVersionUID = 1L;
 
 			public Tuple2<String, Integer> call(String word) throws Exception {
 				return new Tuple2<String, Integer>(word, 1);
 			}
 		});
-		
-		
-		JavaPairDStream<String, Integer> wordsCount = pairs.reduceByKey(new Function2<Integer, Integer, Integer>() { //对相同的Key，进行Value的累计（包括Local和Reducer级别同时Reduce）
-			
-			/**
-			 * 
-			 */
+
+		JavaPairDStream<String, Integer> wordsCount = pairs.reduceByKey(
+				new Function2<Integer, Integer, Integer>() {
+			//对相同的Key，进行Value的累计（包括Local和Reducer级别同时Reduce）
 			private static final long serialVersionUID = 1L;
 
 			public Integer call(Integer v1, Integer v2) throws Exception {
