@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="HydraSettings">
+    <option name="hydraStorePath" value="F:\尚学堂\大数据班\项目2_车流量分析\代码\TrafficTeach\.hydra\idea" />
+    <option name="noOfCores" value="2" />
+    <option name="projectRoot" value="F:\尚学堂\大数据班\项目2_车流量分析\代码\TrafficTeach" />
+    <option name="sourcePartitioner" value="auto" />
+  </component>
+</project>
