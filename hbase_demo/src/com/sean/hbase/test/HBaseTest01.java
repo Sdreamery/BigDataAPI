@@ -1,4 +1,4 @@
-package com.sean.hbase;
+package com.sean.hbase.test;
 
 import java.io.IOException;
 
